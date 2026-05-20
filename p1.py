@@ -21,12 +21,29 @@ class Layer_Dense:
             #rn biases are intialized to zeros
             # if we end up with 0's as the output for many neurons in many layers, may have to increase default biases above 0
     def forward(self, inputs):
+        self.inputs = inputs #save the inputs for backpropagation
         self.output = np.dot(inputs, self.weights) + self.biases
+    
+    def backward(self, dvalues):
+        #dvalues is the gradient of the loss with respect to the output of this layer, which is also the input to the next layer
+        
+        #gradient of the loss with respect to the weights
+        self.dweights = np.dot(self.inputs.T, dvalues) 
+        #gradient of the loss with respect to the biases
+        self.dbiases = np.sum(dvalues, axis=0, keepdims=True) 
+        #gradient of the loss with respect to the inputs of this layer, which is also the output of the previous layer
+        self.dinputs = np.dot(dvalues, self.weights.T) 
 
 class Activation_ReLU:
     #ReLU = rectifity linear unit
     def forward(self, inputs):
+        self.inputs = inputs #save the inputs for backpropagation
         self.output = np.maximum(0, inputs)
+
+    def backward(self, dvalues):
+        #if input value is less than or equal to 0, set the gradient to 0, otherwise keep it the same
+        self.dinputs = dvalues.copy() #copy the values of dvalues so we can modify them without affecting the original array
+        self.dinputs[self.inputs <= 0] = 0
 
 class Activation_Softmax:
     def forward(self, inputs):
@@ -84,10 +101,41 @@ class Loss_CategoricalCrossentropy(Loss):
         negative_log_likelihoods = -np.log(correct_confidences)
         return negative_log_likelihoods
 
-def accuracy(predictions, y_true):
+class Activation_Softmax_Loss_CategoricalCrossentropy():
+    def __init__(self):
+        self.activation = Activation_Softmax()
+        self.loss = Loss_CategoricalCrossentropy()
+
+    def forward(self, inputs, y_true):
+        self.activation.forward(inputs)
+        self.output = self.activation.output
+        return self.loss.calculate(self.output, y_true)
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        if len(y_true.shape) == 2: #if one hot encoded, turn into discrete values
+            y_true = np.argmax(y_true, axis=1)
+        self.dinputs = dvalues.copy() #this is the gradient of the loss with respect to the inputs of the softmax function, which is also the output of the last dense layer
+       
+        #subtract 1 from the values of the correct labels
+        #then divide by the number of samples to get the average gradient across the batch
+        self.dinputs[range(samples), y_true] -= 1 
+        self.dinputs = self.dinputs / samples
+
+class Optimizer_SGD:
+    def __init__(self, learning_rate=1.0):
+        self.learning_rate = learning_rate
+
+    def update_params(self, layer):
+        layer.weights -= self.learning_rate * layer.dweights
+        layer.biases -= self.learning_rate * layer.dbiases
+
+
+def compute_accuracy(predictions, y_true):
     #fraction of samples where argmax prediction matches the true label
     predicted_labels = np.argmax(predictions, axis=1)
     return np.mean(predicted_labels == y_true)
+
 
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 #dataset: https://github.com/zalandoresearch/fashion-mnist
@@ -114,20 +162,6 @@ activation2 = Activation_ReLU()
 dense3 = Layer_Dense(64, 10) #64 inputs bc the outputs of the last layer was 64 neurons, and we choose 10 neurons in output layer bc we have 10 classes
 activation3 = Activation_Softmax()
 
-#FORWARD PASS 
-#on just a batch of data, not the whole dataset
-BATCH_SIZE = 256
-X_batch = X_train[:BATCH_SIZE]
-y_batch = y_train[:BATCH_SIZE]
-
-dense1.forward(X_batch)
-activation1.forward(dense1.output)
-
-dense2.forward(activation1.output)
-activation2.forward(dense2.output)
-
-dense3.forward(activation2.output)
-activation3.forward(dense3.output)
 
 #one hot encoding
 #vector that is n long, where n is number of classes
@@ -150,12 +184,6 @@ activation3.forward(dense3.output)
     #
     #confidences on correct labels = [0.7,0.5,0.9] 
         #0.7 bc its the 0th element, and 0.5 and 0.9 are the 1st element
-
-    
-loss_function = Loss_CategoricalCrossentropy()
-loss = loss_function.calculate(activation3.output, y_batch) #activation3.output is softmax outputs, y_batch is the target
-accuracy = accuracy(activation3.output, y_batch)
-
 
 #loss tells us how wrong smth is
 #how to decrease loss - optimize weights and biases
@@ -183,14 +211,80 @@ accuracy = accuracy(activation3.output, y_batch)
 
 #^^that process takes a long time for computers, so:
 #divide training data into mini-batches and do backprop for each batch
-#what next?
 
-#DISPLAYING OUTPUTS
-print(f"\n── Forward pass on {BATCH_SIZE} samples ──")
-print(f"Loss:     {loss:.4f}    This means {np.exp(-loss):.4f} is the probability of being correct  (random init baseline ≈ {np.log(10):.4f})")
-print(f"Accuracy: {accuracy*100:.1f}%  (random init baseline ≈ 10%)")
-print(f"\nFirst 5 predictions:")
-for i in range(5):
-    pred  = np.argmax(activation3.output[i])
-    true  = y_batch[i]
-    print(f"  Sample {i}: predicted={CLASS_NAMES[pred]:<15} true={CLASS_NAMES[true]}")
+#the gradient of the loss with respect to weight 
+#positive gradient means that increasing the weight will increase the loss, so we want to decrease the weight
+#^^vice versa for negative gradient
+
+#update rule is weight = weight - learning_rate * gradient
+
+
+loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
+optimizer = Optimizer_SGD(learning_rate=0.01)
+
+epochs = 20
+batch_size = 256
+
+for epoch in range(epochs):
+    #each epoch will use a different set of data
+    indices = np.random.permutation(len(X_train))
+    X_shuffled = X_train[indices]
+    y_shuffled = y_train[indices]
+
+    epoch_loss = 0
+    epoch_accuracy = 0
+    num_batches = len(X_train) //batch_size
+
+    for i in range(num_batches):
+        #now we get a different batch of data for each iteration of the loop
+        X_batch = X_shuffled[i*batch_size:(i+1)*batch_size] 
+        y_batch = y_shuffled[i*batch_size:(i+1)*batch_size]
+
+        #forward
+        dense1.forward(X_batch)
+        activation1.forward(dense1.output)
+        dense2.forward(activation1.output)
+        activation2.forward(dense2.output)
+        dense3.forward(activation2.output)
+        loss = loss_activation.forward(dense3.output, y_batch)
+        epoch_loss += loss
+
+        #accuracy
+        predictions = np.argmax(loss_activation.output, axis=1)
+        accuracy = np.mean(predictions == y_batch)
+        epoch_accuracy += accuracy
+
+        #backward
+        loss_activation.backward(loss_activation.output, y_batch)
+        dense3.backward(loss_activation.dinputs)
+        activation2.backward(dense3.dinputs)
+        dense2.backward(activation2.dinputs)
+        activation1.backward(dense2.dinputs)
+        dense1.backward(activation1.dinputs)
+
+        #updating the optimizer
+        optimizer.update_params(dense1)
+        optimizer.update_params(dense2)
+        optimizer.update_params(dense3)
+
+    print(f"Epoch {epoch+1:>2}/{epochs}  loss: {epoch_loss/num_batches:.4f}  acc: {epoch_accuracy/num_batches*100:.1f}%")
+    if (epoch == 19):
+        print(f"Final Accuracy(on training data): {epoch_accuracy/num_batches*100:.1f}") 
+
+
+#testing on X_text y_test
+dense1.forward(X_test)
+activation1.forward(dense1.output)
+dense2.forward(activation1.output)
+activation2.forward(dense2.output)
+dense3.forward(activation2.output)
+loss_activation.activation.forward(dense3.output)  # softmax only, no loss needed
+ 
+loss_fn   = Loss_CategoricalCrossentropy()
+test_loss = loss_fn.calculate(loss_activation.activation.output, y_test)
+test_acc  = compute_accuracy(loss_activation.activation.output, y_test)
+ 
+print()
+print(f"\n── Test set evaluation ──")
+print(f"Loss:     {test_loss:.4f}")
+print(f"Accuracy: {test_acc*100:.1f}%")
