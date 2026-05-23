@@ -37,13 +37,13 @@ Before training, the images were flattened. This means instead of a 2D array of 
 This network has three layers, with ReLU activation on the hidden layers and Softmax activation on the output. 
 
 Input(784 values) <br>
-&emsp🡣 <br>
+&emsp;🡣 <br>
 Hidden Layer 1 -- 128 neurons, ReLU activation <br>
-&emsp🡣 <br>
+&emsp;🡣 <br>
 Hidden Layer 2 -- 64 neurons, ReLU activation <br>
-&emsp🡣 <br>
+&emsp;🡣 <br>
  Output Layer 3 -- 10 neurons, Softmax activation <br>
-&emsp🡣 <br>
+&emsp;🡣 <br>
     Output -- a probability distribution over 10 classes for each example <br>
 
 The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{\frac{2}{n_inputs}}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
