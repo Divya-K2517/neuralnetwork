@@ -74,8 +74,8 @@ For each layer, 3 calculations are done to update the weights, biases, and send 
 
 <ins>Optimizer</ins> <br>
 The Optimizer is used during backpropagation to change the weights and biases. Here, the Stochastic Gradient Descent Optimizer(SGD) with a learning rate of 0.01. After the backpropagation step computes the gradients (how much the loss changes in response to weights, biases, and inputs), the optimizer applies these rules to every layer: <br>
-$weights = weights - (learningRate \* dweights) $ <br>
-$biases = biases - (learningRate \* dbiases) $ <br>
+$$weights = weights - (learningRate \* dweights) $$ <br>
+$$biases = biases - (learningRate \* dbiases) $$ <br>
 These equations move the weights/biases in the opposite direction of the gradient. For example, if the gradient is positive(which means a highet weight/bias produces greater loss), that means that the weight/bias will decrease(or become less positive). This allows loss to decrease. <br>
 The learning rate is important because if it is too large, the updates will be an overshoot. Too small and the training will be very slow. 
 
@@ -83,7 +83,7 @@ The learning rate is important because if it is too large, the updates will be a
 The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches of 256 samples (for a total of 234 batches per epoch). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, and then call the optimizer to update weights. 
 
 <ins>Results</ins> <br>
-$Epoch  1/20  loss: 1.3488  acc: 57.9% <br>
+$$Epoch  1/20  loss: 1.3488  acc: 57.9% <br>
 Epoch  2/20  loss: 0.7752  acc: 74.6% <br>
 Epoch  3/20  loss: 0.6528  acc: 78.3% <br>
 Epoch  4/20  loss: 0.5940  acc: 80.1% <br>
@@ -106,7 +106,7 @@ Epoch 20/20  loss: 0.4163  acc: 85.6% <br>
 
 ── Test set evaluation ── <br>
 Loss:     0.4536 <br>
-Accuracy: 84.0% $
+Accuracy: 84.0% $$
 
 The network starts with a 57.9% accuracy and ends at 85.6% after training, and a test accuracy of 84.0%. For reference, a random baseline for a 10 class data set would be ~10% accuracy.
 
