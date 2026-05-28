@@ -70,11 +70,45 @@ Backpropagation is the process of going backwards through the network(starting f
 At the core of this process is the chain rule. Remember that for a single layer, $z = Wx + b$, where $z$ is output, $W$ is weight, $x$ is input, and $b$ is bias. We then apply the activation function and calculate loss. What is we want to know is $\frac{dL}{dW}$ - how much will loss change if we change a specific weight? Thanks to the chain rule that expression can be broken down into: $\frac{dL}{dW} = \frac{dL}{da} \* \frac{da}{dz} \* \frac{dz}{dW}$.  $\frac{dL}{da}$ is how the activation affects the loss, $\frac{da}{dz}$ is how the activation changes in response to the input, and $\frac{dz}{dW}$ is how the weights affect the output. With $\frac{dL}{dW}$, we can then do $new_weight = oldWeight + (learningRate)\frac{dL}{da}$. Each class has a backward() method that implements this backpropagation process.  <br>
 For the Softmax activation and Cross-Entropy Loss, the gradient simplifies to $gradient = output_prediction - output_true$. This is essentially the same as $predicted probability - 1$. This tells the network to push the correct class's probability to 1 and others to 0.<br>
 The ReLU function backwards ends up as a step function. Recall that $ReLU(x) = max(x,0)$, so $\frac{d_ReLU}{dx} = 1$ if $x > 0$, or 0 otherwise. When going backwards, this means any neuron that was inactive during forward pass (thanks to ReLU) is zeroed out. <br>
-For each layer, 3 calculations are done to update the weights, biases, and send to the previous layer how much the inputs affected the loss. The gradient for the weights was $dWeights = inputs.T \* dValues$. We take the transpose of inputs and matrix multiply by dValues, the measure of how much the ouputs to the current layer affect the loss. The gradient for the biases is $dBiases = sum(dValues, axis=0)$, or in other words just the sum of how much each neuron output contributed to the loss. The gradient of the inputs is $dInputs = dValues \* weights.T$, or dValues matrix multiplyed by the transpose of the weights.
+For each layer, 3 calculations are done to update the weights, biases, and send to the previous layer how much the inputs affected the loss. The gradient for the weights was $dWeights = inputs.T \* dValues$. We take the transpose of inputs and matrix multiply by dValues, the measure of how much the ouputs to the current layer affect the loss. The gradient for the biases is $dBiases = sum(dValues, axis=0)$, or in other words just the sum of how much each neuron output contributed to the loss. The gradient of the inputs is $dInputs = dValues \* weights.T$, or dValues matrix multiplyed by the transpose of the weights. 
 
+<ins>Optimizer</ins> <br>
+The Optimizer is used during backpropagation to change the weights and biases. Here, the Stochastic Gradient Descent Optimizer(SGD) with a learning rate of 0.01. After the backpropagation step computes the gradients (how much the loss changes in response to weights, biases, and inputs), the optimizer applies these rules to every layer: <br>
+$weights = weights - (learningRate \* dweights) $ <br>
+$biases = biases - (learningRate \* dbiases) $ <br>
+These equations move the weights/biases in the opposite direction of the gradient. For example, if the gradient is positive(which means a highet weight/bias produces greater loss), that means that the weight/bias will decrease(or become less positive). This allows loss to decrease. <br>
+The learning rate is important because if it is too large, the updates will be an overshoot. Too small and the training will be very slow. 
 
+<ins>Traning Loop</ins> <br>
+The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches of 256 samples (for a total of 234 batches per epoch). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, and then call the optimizer to update weights. 
 
+<ins>Results</ins> <br>
+$Epoch  1/20  loss: 1.3488  acc: 57.9% <br>
+Epoch  2/20  loss: 0.7752  acc: 74.6% <br>
+Epoch  3/20  loss: 0.6528  acc: 78.3% <br>
+Epoch  4/20  loss: 0.5940  acc: 80.1% <br>
+Epoch  5/20  loss: 0.5584  acc: 81.2% <br>
+Epoch  6/20  loss: 0.5336  acc: 81.9% <br>
+Epoch  7/20  loss: 0.5143  acc: 82.5% <br>
+Epoch  8/20  loss: 0.4987  acc: 83.0% <br>
+Epoch  9/20  loss: 0.4870  acc: 83.3% <br>
+Epoch 10/20  loss: 0.4759  acc: 83.7% <br>
+Epoch 11/20  loss: 0.4670  acc: 84.0% <br>
+Epoch 12/20  loss: 0.4590  acc: 84.2% <br>
+Epoch 13/20  loss: 0.4512  acc: 84.5% <br>
+Epoch 14/20  loss: 0.4451  acc: 84.7% <br>
+Epoch 15/20  loss: 0.4394  acc: 84.9% <br>
+Epoch 16/20  loss: 0.4342  acc: 85.0% <br>
+Epoch 17/20  loss: 0.4291  acc: 85.2% <br>
+Epoch 18/20  loss: 0.4246  acc: 85.3% <br>
+Epoch 19/20  loss: 0.4204  acc: 85.4% <br>
+Epoch 20/20  loss: 0.4163  acc: 85.6% <br>
 
+── Test set evaluation ── <br>
+Loss:     0.4536 <br>
+Accuracy: 84.0% $
+
+The network starts with a 57.9% accuracy and ends at 85.6% after training, and a test accuracy of 84.0%. For reference, a random baseline for a 10 class data set would be ~10% accuracy.
 
 References: <br>
 [https://github.com/zalandoresearch/fashion-mnist](https://github.com/zalandoresearch/fashion-mnist) <br>
@@ -82,3 +116,4 @@ References: <br>
 [https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/](https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/) <br>
 [https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/](https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/) <br>
 [https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/)<br>
+(https://github.com/Sentdex/nnfs)[https://github.com/Sentdex/nnfs]<br>
