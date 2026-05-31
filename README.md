@@ -1,4 +1,4 @@
-**End-to-End Neural Network Implementation in Python**<br>
+# **End-to-End Neural Network Implementation in Python**<br>
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![NumPy](https://img.shields.io/badge/NumPy-only-green)
 ![Accuracy](https://img.shields.io/badge/Test%20Accuracy-84%25-brightgreen)
