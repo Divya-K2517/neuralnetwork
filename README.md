@@ -17,7 +17,7 @@ Starting from random weights, the model reaches 85.6% training accuracy and 84.0
 [Training Loop](#training-loop)  
 [Results](#results)
 
-## 👗Dataset
+## 👗 Dataset
 The network is currently trained on the Fashion MNIST dataset, which is a replacement for the classic MNIST (handwritten digits) dataset. It is a collection of 70,000 total images of clothing articles, each belonging to one of 10 classes. The images have the same structure as MNIST: grayscale and 28x28 pixels. These are the 10 classes: 
 
 
@@ -36,7 +36,7 @@ The network is currently trained on the Fashion MNIST dataset, which is a replac
 
 Before training, the images were flattened. This means instead of a 2D array of 28x28, they were reshaped into a 1D array of 784 values. This makes it easier for the network's layers to consume data, and doesn't have any negative effect either. The image arrays were also normalized. This is the process of converting values to be between a range of [0.0, 1.0]. Orignally, since this dataset consists of images, the values for each example were between [0, 255]. Normalization keeps the inputes small and prevents erractic weight updates or unnesscary complexity later on during training. 
 
-## 🕸️Network Architecture
+## 🕸️ Network Architecture
 This network has three layers, with ReLU activation on the hidden layers and Softmax activation on the output. 
 
 | Layer | Size | Activation |
@@ -48,14 +48,14 @@ This network has three layers, with ReLU activation on the hidden layers and Sof
 
 The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{\frac{2}{n_inputs}}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
 
-## ➡️Forward Pass
+## ➡️ Forward Pass
 Each neuron does this computation: $$outputOfNeuron = input\*weight + bias $$. Another way to represent this is through matrix multiplication. If we combine all the inputs, weights, and biases for a specific layer into matrices, we can do $$outputOfLayer = inputsMatrix\*weightsMatrix + biasesMatrix$$. Note that the inputsMatrix and weightsMatrix are matrix multiplied(not the same as regular multiplication).
 
 The *ReLU* activation function is applied after each hidden layer: $$ReLU(x) = max(0,x)$$<br> 
 The *Softmax* activation function is applied to the output layer: $$Softmax(x) = \frac{e^x}{\text{sum of e**y for each output of that layer}}$$ <br>
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
-## 📉Loss
+## 📉 Loss
 The network trains using *Categorical Cross-Entropy* loss:  $$\mathcal{L} = -\sum_{i} y_i \log(\hat{y}_i)$$ <br>
 
 Lets break this down: 
@@ -64,7 +64,7 @@ Lets break this down:
 * prediction[i] is the vector of how likely an example is of a certain class.
 * thanks to the one-hot encoding multiplying all wrong classes by 0, what we are essentially doing is: $-log(predictionProbabilityForCorrectClass)$
 
-## ⬅️Backpropagation
+⬅️ ## Backpropagation
 Backpropagation is the process of going backwards through the network(starting from output layer to the inputs) and computing how much each weight and bias contribute to the loss (here we use Categorical Cross-Entropy Loss. By doing this, we get an idea of how to tweak that weight/bias in order to minimize loss. <br>
 
 At the core of this process is the chain rule. Remember that for a single layer, $z = Wx + b$, where $z$ is output, $W$ is weight, $x$ is input, and $b$ is bias. We then apply the activation function and calculate loss. What is we want to know is $\frac{dL}{dW}$ - how much will loss change if we change a specific weight? Thanks to the chain rule that expression can be broken down into: $\frac{dL}{dW} = \frac{dL}{da} \* \frac{da}{dz} \* \frac{dz}{dW}$.  $\frac{dL}{da}$ is how the activation affects the loss, $\frac{da}{dz}$ is how the activation changes in response to the input, and $\frac{dz}{dW}$ is how the weights affect the output. With $\frac{dL}{dW}$, we can then do $new_weight = oldWeight + (learningRate)\frac{dL}{da}$. Each class has a backward() method that implements this backpropagation process.  <br>
